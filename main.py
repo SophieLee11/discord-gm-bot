@@ -98,6 +98,8 @@ async def start_auto_get(ctx):
 
 	await ctx.send(f"> Automatic data collection is started ✅")
 
+	update_days = 1
+
 	phrase = 'gm'
 	days = 1
 
@@ -116,7 +118,7 @@ async def start_auto_get(ctx):
 		await ctx.send(get_cur_dt(full = True), file = discord.File("data.xlsx"))
 		
 		print('Xlsx is created!')
-		await asyncio.sleep(30)
+		await asyncio.sleep(60 * 60 * 24 * update_days)
 
 
 @client.command()
