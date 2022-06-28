@@ -1,0 +1,39 @@
+>>> **#BOT COMMANDS**
+
+__**.hlp**__
+Show all commands
+
+__**.clear** *(amount=10)*__
+Delete last messages
+`amount` – *amount of messages to delete*
+
+__**.add** *(id)*__
+Add server id to check list
+`id` – *ID to add to the list, required*
+
+__**.remove** *(id)*__
+Remove server id from check list
+`id` – *ID to remove from the list, required*
+
+__**.list**__
+Show check list
+
+__**.list_clear**__
+Clear check list
+
+__**.get** *(id, days=1, phrase='gm')*__
+Get the coefficient for the selected server, days and phrase
+`id` – *ID to search for, required*
+`days` – *number of days to receive messages*
+`phrase` – *search phrase*
+
+__**.get_all** *(days=1, phrase='gm')*__
+Get all list coefficients
+`days` – *number of days to receive messages*
+`phrase` – *search phrase*
+
+__**.start_auto_get**__
+Start automatic data collection
+
+__**.stop_auto_get**__
+Stop automatic data collection
