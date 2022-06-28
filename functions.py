@@ -85,12 +85,23 @@ def save_txt_from_list(server_list):
 def add_to_xlsx_file(server_name, server_id, value, gm_amount, members_amount):
 
 	wb = load_workbook(filename = "data.xlsx")
-	sheet = wb.active
+	ws = wb['Data']
 
-	date = get_cur_dt()
-	row = (date, server_name, server_id, value, gm_amount, members_amount)
+	table = ws.tables["All"]
 
-	sheet.append(row)
+	new_row = int(table.ref[table.ref.index('F') + 1:]) + 1
+
+	date = datetime.date.today()
+	
+	ws[f'A{new_row}'] = date
+	ws[f'B{new_row}'] = server_name
+	ws[f'C{new_row}'] = server_id
+	ws[f'D{new_row}'] = value
+	ws[f'E{new_row}'] = gm_amount
+	ws[f'F{new_row}'] = members_amount
+
+	table.ref = f'A1:F{new_row}'
+
 	wb.save('data.xlsx')
 
 
