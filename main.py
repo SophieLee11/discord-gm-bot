@@ -190,7 +190,6 @@ async def start_auto_get(ctx):
 				response = execute(f"SELECT name, server, value, dt FROM data WHERE server_id IS NOT NULL")
 
 				dt_lst = []
-				headers = ['Date']
 
 				smallest = datetime.datetime.max
 				biggest = datetime.datetime.min
@@ -202,8 +201,6 @@ async def start_auto_get(ctx):
 						smallest = dt
 					if dt > biggest:
 						biggest = dt
-
-					headers.append(name.replace('"', "'"))
 
 				if smallest == biggest:
 					dt_lst = [smallest.strftime('%d.%m.%Y')]
@@ -218,20 +215,24 @@ async def start_auto_get(ctx):
 				def get_date(date):
 					return datetime.datetime.strptime(date.split(' ')[0], '%Y-%m-%d').strftime('%d.%m.%Y')
 
+				headers = ['Servers']
 				data = []
 
 				for dt in dt_lst:
 					lst = [dt]
 
-					for i in response:
-						if get_date(i[2]) == dt:
-							lst.append(i[1])
+					for name, server_id, value, date in response:
+						date = get_date(date)
+						headers.append(date)
+
+						if date == dt:
+							lst.append(value)
 						else:
 							lst.append(None)
 
 					data.append(lst)
 
-				reate_excel(headers, data)
+				create_excel(headers, data)
 
 			# else:
 			# 	return await ctx.send(f"> The list is empty ⚠️")
