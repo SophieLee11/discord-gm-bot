@@ -1,6 +1,6 @@
 >>> **#BOT COMMANDS**
 
-__**.hlp**__
+__**.h**__
 Show all commands
 
 __**.clear** *(amount=10)*__
@@ -15,10 +15,10 @@ __**.remove** *(id)*__
 Remove server id from check list
 `id` – *ID to remove from the list, required*
 
-__**.list**__
-Show check list
+__**.checklist**__
+Show checklist
 
-__**.list_clear**__
+__**.clear_checklist**__
 Clear check list
 
 __**.get** *(id, days=1, phrase='gm')*__
