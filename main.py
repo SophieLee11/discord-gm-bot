@@ -35,12 +35,12 @@ async def clear(ctx, amount = 10):
 async def add(ctx, guild_id):
 	try:
 		guild = client.get_guild(int(guild_id))
-		response = execute(f"INSERT INTO servers (discord_id) VALUES ({int(guild_id)})")
+		response = execute(f"INSERT INTO checklist (discord_id) VALUES ({int(guild_id)})")
 
 		await ctx.send(f"> {guild.name} ({guild_id}) has been added to the list ✅")
 
-	except:
-		await ctx.send(f"> Error ⚠️")
+	except Exception as e:
+		await ctx.send(f"> Error {e} ⚠️")
 
 
 
@@ -48,7 +48,8 @@ async def add(ctx, guild_id):
 async def remove(ctx, guild_id):
 	try:
 		guild = client.get_guild(int(guild_id))
-		response = execute(f"DELETE FROM servers WHERE discord_id = {int(guild_id)}")
+		execute(f"UPDATE data SET server_id = NULL WHERE server_id = (SELECT id FROM checklist WHERE discord_id = {int(guild_id)})")
+		execute(f"DELETE FROM checklist WHERE discord_id = {int(guild_id)}")
 
 		await ctx.send(f"> {guild.name} ({guild_id}) is removed from checklist ✅")
 
@@ -59,7 +60,7 @@ async def remove(ctx, guild_id):
 
 @client.command()
 async def checklist(ctx):
-	response = execute(f"SELECT * FROM servers")
+	response = execute(f"SELECT * FROM checklist")
 
 	if len(response) > 0:
 		text = create_checklist(client, [i[1] for i in response])
@@ -91,10 +92,11 @@ def create_checklist(client, server_list):
 
 @client.command()
 async def clear_checklist(ctx):
-	response = execute(f"SELECT * FROM servers")
+	response = execute(f"SELECT * FROM checklist")
 
 	for i in response:
-		execute(f"DELETE FROM servers WHERE id = {i[0]}")
+		execute(f"UPDATE data SET server_id = NULL WHERE server_id = (SELECT id FROM checklist WHERE discord_id = {i[1]})")
+		execute(f"DELETE FROM checklist WHERE id = {i[0]}")
 
 	await ctx.send(f"> Checklist is cleared ✅" )
 
@@ -139,7 +141,7 @@ async def get_message_list(client, guild_id, days, phrase):
 @client.command()
 async def get_all(ctx, days = 1, phrase = 'gm'):
 
-	response = execute(f"SELECT * FROM servers")
+	response = execute(f"SELECT * FROM checklist")
 
 	if len(response) > 0:
 		for i in response:
@@ -167,50 +169,77 @@ async def start_auto_get(ctx):
 		days = 1
 
 		while run_auto_get:
-			response = execute(f"SELECT * FROM servers")
+			response = execute(f"SELECT * FROM checklist")
 
 			if len(response) > 0:
-				for i in response:
-					guild, message_list, members_amount = await get_message_list(client, i[1], days, phrase)
-					value = len(message_list) / members_amount
+				for server_id in [i[1] for i in response]:
+					guild, message_list, members_amount = await get_message_list(client, server_id, days, phrase)
 
-					# execute(f"""
+					gm_amount = len(message_list)
+					value = gm_amount / members_amount
+					name = guild.name.replace("'", '"')
+
+					# sql = f"""
 					# 	INSERT INTO data 
-					# 	(value, gm_amount, members, server_id) 
+					# 	(server, name, value, gm_amount, members, server_id) 
 					# 	VALUES 
-					# 	({value}, {len(message_list)}, {members_amount}, {i[1]})
-					# """)
+					# 	({server_id}, '{name}', {value}, {gm_amount}, {members_amount}, (SELECT id FROM checklist WHERE discord_id = {server_id}))
+					# """
+					# execute(sql)
 
-				response = execute(f"SELECT DISTINCT server_id FROM data")
-				headers = [k[0] for k in response]
+				response = execute(f"SELECT name, server, value, dt FROM data WHERE server_id IS NOT NULL")
 
-				data = {}
-				for header in headers:
-					data[header] = []
+				dt_lst = []
+				headers = ['Date']
 
-				response = execute(f"SELECT * FROM data")
+				smallest = datetime.datetime.max
+				biggest = datetime.datetime.min
 
-				for row in response:
+				for name, server_id, value, dt in response:
+					dt = datetime.datetime.strptime(dt.split(' ')[0], '%Y-%m-%d')
+					
+					if dt < smallest:
+						smallest = dt
+					if dt > biggest:
+						biggest = dt
 
-					value = row[1]
-					gm_amount = row[2]
-					members = row[3]
-					server_id = row[4]
-					dt = row[5]
+					headers.append(name.replace('"', "'"))
 
-					for header in data:
-						if header == server_id:
-							data[header].append( [dt, value, gm_amount, members] )
+				if smallest == biggest:
+					dt_lst = [smallest.strftime('%d.%m.%Y')]
+				else:
+					def daterange(date1, date2):
+					    for n in range(int( (date2 - date1).days) + 1):
+					        yield date1 + datetime.timedelta(n)
 
-				create_excel(client, data)
+					for dt in daterange(smallest, biggest):
+					   dt_lst.append(dt.strftime('%d.%m.%Y'))
 
-			else:
-				return await ctx.send(f"> The list is empty ⚠️")
+				def get_date(date):
+					return datetime.datetime.strptime(date.split(' ')[0], '%Y-%m-%d').strftime('%d.%m.%Y')
 
-			dt = datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')
-			await ctx.send(dt, file = discord.File("gm_data.xlsx"))
+				data = []
+
+				for dt in dt_lst:
+					lst = [dt]
+
+					for i in response:
+						if get_date(i[2]) == dt:
+							lst.append(i[1])
+						else:
+							lst.append(None)
+
+					data.append(lst)
+
+				reate_excel(headers, data)
+
+			# else:
+			# 	return await ctx.send(f"> The list is empty ⚠️")
+
+			# dt = datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+			# await ctx.send(dt, file = discord.File("gm_data.xlsx"))
 			
-			await asyncio.sleep(60 * 60 * 24 * update_days)
+			# await asyncio.sleep(60 * 60 * 24 * update_days)
 
 	else:
 		await ctx.send(f"> Automatic data collection is already started ⚠️")
@@ -223,8 +252,6 @@ async def stop_auto_get(ctx):
 	run_auto_get = False
 
 	await ctx.send(f"> Automatic data collection is stopped ❌")
-	
-
 
 	
 
