@@ -171,21 +171,27 @@ async def start_auto_get(ctx):
 		while run_auto_get:
 			response = execute(f"SELECT * FROM checklist")
 
+			server_list = []
+
 			if len(response) > 0:
 				for server_id in [i[1] for i in response]:
+
 					guild, message_list, members_amount = await get_message_list(client, server_id, days, phrase)
 
 					gm_amount = len(message_list)
 					value = gm_amount / members_amount
 					name = guild.name.replace("'", '"')
 
-					# sql = f"""
-					# 	INSERT INTO data 
-					# 	(server, name, value, gm_amount, members, server_id) 
-					# 	VALUES 
-					# 	({server_id}, '{name}', {value}, {gm_amount}, {members_amount}, (SELECT id FROM checklist WHERE discord_id = {server_id}))
-					# """
-					# execute(sql)
+					sql = f"""
+						INSERT INTO data 
+						(server, name, value, gm_amount, members, server_id) 
+						VALUES 
+						({server_id}, '{name}', {value}, {gm_amount}, {members_amount}, (SELECT id FROM checklist WHERE discord_id = {server_id}))
+					"""
+					execute(sql)
+
+					name = guild.name.replace('"', "'")
+					server_list.append(name)
 
 				response = execute(f"SELECT name, server, value, dt FROM data WHERE server_id IS NOT NULL")
 
@@ -215,32 +221,41 @@ async def start_auto_get(ctx):
 				def get_date(date):
 					return datetime.datetime.strptime(date.split(' ')[0], '%Y-%m-%d').strftime('%d.%m.%Y')
 
-				headers = ['Servers']
+				headers = dt_lst
 				data = []
 
-				for dt in dt_lst:
-					lst = [dt]
+				names = [i[0].replace('"', "'") for i in response]
+				dates = [i[3] for i in response]
+				values = [i[2] for i in response]
 
-					for name, server_id, value, date in response:
-						date = get_date(date)
-						headers.append(date)
+				for server in server_list:
+					lst = [server]
 
-						if date == dt:
-							lst.append(value)
-						else:
-							lst.append(None)
+					for dt in dt_lst:
+						for index, name in enumerate(names):
+							if name == server:
+
+								date = get_date(dates[index])
+
+								if date == dt:
+									lst.append(values[index])
+									break
+								elif date not in dt_lst:
+									lst.append(None)
+									break
 
 					data.append(lst)
 
-				create_excel(headers, data)
 
-			# else:
-			# 	return await ctx.send(f"> The list is empty ⚠️")
+				create_excel(['Servers:'] + headers, data)
 
-			# dt = datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')
-			# await ctx.send(dt, file = discord.File("gm_data.xlsx"))
+			else:
+				return await ctx.send(f"> The list is empty ⚠️")
+
+			dt = datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+			await ctx.send(dt, file = discord.File("gm_data.xlsx"))
 			
-			# await asyncio.sleep(60 * 60 * 24 * update_days)
+			await asyncio.sleep(60 * 60 * 24 * update_days)
 
 	else:
 		await ctx.send(f"> Automatic data collection is already started ⚠️")
