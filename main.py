@@ -224,7 +224,7 @@ async def start_auto_get(ctx):
 				headers = dt_lst
 				data = []
 
-				dt_resp = [(server, get_date(date)) for name, server, value, date in response]
+				dt_resp = set([(server, get_date(date)) for name, server, value, date in response])
 
 				for server_id in server_list:
 					server_name = client.get_guild(server_id).name.replace('"', "'")
@@ -233,7 +233,6 @@ async def start_auto_get(ctx):
 					for dt in dt_lst:
 						if (server_id, dt) not in dt_resp:
 							lst.append(None)
-							break
 
 						for index, (name, server, value, date) in enumerate(response):
 
@@ -243,7 +242,6 @@ async def start_auto_get(ctx):
 								lst.append(value)
 								response.pop(index)
 								break
-
 
 					data.append(lst)
 
