@@ -36,8 +36,9 @@ async def add(ctx, guild_id):
 	try:
 		guild = client.get_guild(int(guild_id))
 		response = execute(f"INSERT INTO checklist (discord_id) VALUES ({int(guild_id)})")
+		execute(f"UPDATE data SET server_id = (SELECT id FROM checklist WHERE discord_id = {int(guild_id)}) WHERE server = {int(guild_id)}")
 
-		await ctx.send(f"> {guild.name} ({guild_id}) has been added to the list ✅")
+		await ctx.send(f"> {guild.name} [{guild_id}] has been added to the list ✅")
 
 	except Exception as e:
 		await ctx.send(f"> Error {e} ⚠️")
@@ -51,7 +52,7 @@ async def remove(ctx, guild_id):
 		execute(f"UPDATE data SET server_id = NULL WHERE server_id = (SELECT id FROM checklist WHERE discord_id = {int(guild_id)})")
 		execute(f"DELETE FROM checklist WHERE discord_id = {int(guild_id)}")
 
-		await ctx.send(f"> {guild.name} ({guild_id}) is removed from checklist ✅")
+		await ctx.send(f"> {guild.name} [{guild_id}] is removed from checklist ✅")
 
 	except:
 		await ctx.send(f"> Error ⚠️")
@@ -190,8 +191,7 @@ async def start_auto_get(ctx):
 					"""
 					execute(sql)
 
-					name = guild.name.replace('"', "'")
-					server_list.append(name)
+					server_list.append(server_id)
 
 				response = execute(f"SELECT name, server, value, dt FROM data WHERE server_id IS NOT NULL")
 
@@ -224,28 +224,28 @@ async def start_auto_get(ctx):
 				headers = dt_lst
 				data = []
 
-				names = [i[0].replace('"', "'") for i in response]
-				dates = [i[3] for i in response]
-				values = [i[2] for i in response]
+				dt_resp = [(server, get_date(date)) for name, server, value, date in response]
 
-				for server in server_list:
-					lst = [server]
+				for server_id in server_list:
+					server_name = client.get_guild(server_id).name.replace('"', "'")
+					lst = [server_name]
 
 					for dt in dt_lst:
-						for index, name in enumerate(names):
-							if name == server:
+						if (server_id, dt) not in dt_resp:
+							lst.append(None)
+							break
 
-								date = get_date(dates[index])
+						for index, (name, server, value, date) in enumerate(response):
 
-								if date == dt:
-									lst.append(values[index])
-									break
-								elif date not in dt_lst:
-									lst.append(None)
-									break
+							date = get_date(date)
+
+							if server_id == server and dt == date:
+								lst.append(value)
+								response.pop(index)
+								break
+
 
 					data.append(lst)
-
 
 				create_excel(['Servers:'] + headers, data)
 
@@ -263,12 +263,12 @@ async def start_auto_get(ctx):
 
 
 
-@client.command()
-async def stop_auto_get(ctx):
-	global run_auto_get
-	run_auto_get = False
+# @client.command()
+# async def stop_auto_get(ctx):
+# 	global run_auto_get
+# 	run_auto_get = False
 
-	await ctx.send(f"> Automatic data collection is stopped ❌")
+# 	await ctx.send(f"> Automatic data collection is stopped ❌")
 
 	
 

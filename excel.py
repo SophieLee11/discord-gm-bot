@@ -1,5 +1,6 @@
 from openpyxl import Workbook
 from openpyxl.chart import LineChart, Reference
+from openpyxl.utils import get_column_letter
 
 
 
@@ -19,17 +20,14 @@ def create_excel(headers, data):
 	values = Reference(ws, min_col = 2, min_row = 1, max_col = width, max_row = height)
 	chart = LineChart()
 
-	name = 'Data'
-	ws2 = wb.create_sheet(name)
-	
-	# ws2.add_chart(chart, 'A1')
+	for idx, col in enumerate(ws.columns, 1):
+		ws.column_dimensions[get_column_letter(idx)].auto_size = True
 
-	# chart.title = "Gm_data"
-	# chart.y_axis.title = 'Value'
-	# chart.x_axis.title = 'Date'
-	# chart.x_axis.number_format = 'd-mmm'
-	# chart.x_axis.majorTimeUnit = "days"
+	for col in ws.columns:
+		for cell in [col[0]]:
+			alignment_obj = cell.alignment.copy(horizontal='center', vertical='center')
+			cell.alignment = alignment_obj
 
-	# chart.add_data(values)
+	ws.column_dimensions["A"].width = 28
 
 	wb.save("gm_data.xlsx")

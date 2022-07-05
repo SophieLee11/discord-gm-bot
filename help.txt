@@ -34,6 +34,3 @@ Get all list coefficients
 
 __**.start_auto_get**__
 Start automatic data collection
-
-__**.stop_auto_get**__
-Stop automatic data collection
