@@ -1,21 +1,35 @@
 from openpyxl import Workbook
+from openpyxl.chart import LineChart, Reference
 
 
 
-def create_excel(client, data):
+def create_excel(headers, data):
 
 	wb = Workbook()
-	std = wb.get_sheet_by_name('Sheet')
-	wb.remove_sheet(std)
+	ws = wb.active
 
-	for server_id in data:
-		lst = data[server_id]
-		name = client.get_guild(server_id).name
+	ws.append(headers)
 
-		ws = wb.create_sheet(name)
-		ws.append(['Date', 'Value', 'Gm_amount', 'Members'])
+	for row in data:
+		ws.append(row)
 
-		for row in lst:
-			ws.append(row)
+	width = len(data[0])
+	height = len(data) + 1
+
+	values = Reference(ws, min_col = 2, min_row = 1, max_col = width, max_row = height)
+	chart = LineChart()
+
+	name = 'Data'
+	ws2 = wb.create_sheet(name)
+	
+	# ws2.add_chart(chart, 'A1')
+
+	# chart.title = "Gm_data"
+	# chart.y_axis.title = 'Value'
+	# chart.x_axis.title = 'Date'
+	# chart.x_axis.number_format = 'd-mmm'
+	# chart.x_axis.majorTimeUnit = "days"
+
+	# chart.add_data(values)
 
 	wb.save("gm_data.xlsx")

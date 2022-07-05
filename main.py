@@ -174,7 +174,7 @@ async def start_auto_get(ctx):
 			server_list = []
 
 			if len(response) > 0:
-				for server_id in [i[1] for i in response]:
+				for id, server_id in response:
 
 					guild, message_list, members_amount = await get_message_list(client, server_id, days, phrase)
 
@@ -254,6 +254,7 @@ async def start_auto_get(ctx):
 
 			dt = datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')
 			await ctx.send(dt, file = discord.File("gm_data.xlsx"))
+			await ctx.send(file = discord.File("database.db"))
 			
 			await asyncio.sleep(60 * 60 * 24 * update_days)
 
